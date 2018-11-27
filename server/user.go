@@ -9,4 +9,9 @@ import (
 )
 
 func GetUserProfile(c *gin.Context) {
+	user := c.Param("user")
+
+}
+
+func RenderUserProfile(c *gin.Context) {
 }

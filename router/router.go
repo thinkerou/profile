@@ -12,6 +12,9 @@ func Load() http.Handler {
 	r := gin.Default()
 
 	r.GET("/api/user/:user", server.GetUserProfile)
+	r.GET("/user/:user", server.RenderUserProfile)
+	r.GET("/search", server.Search)
+	// websocket 
 
 	return r
 }
