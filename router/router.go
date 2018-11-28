@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/thinkerou/your-profile-about-github/server"
+	"github.com/thinkerou/profile/server"
 )
 
 func Load() http.Handler {

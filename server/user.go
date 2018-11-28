@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/thinkerou/your-profile-about-github/model"
+	"github.com/thinkerou/profile/model"
 )
 
 func GetUserProfile(c *gin.Context) {
