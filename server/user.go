@@ -8,12 +8,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
+	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/thinkerou/profile/model"
 	"golang.org/x/oauth2"
 )
 
 func GetUserProfile(c *gin.Context) {
 	username := c.Param("user")
+	db, e := leveldb.OpenFile("user-profile", nil)
+	if e != nil {
+		println("1")
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": e.Error()})
+		return
+	}
+	defer db.Close()
+
+	data, e := db.Get([]byte(username), nil)
+	if e == nil {
+		println("2")
+		println(data)
+		c.JSON(http.StatusOK, gin.H{"msg": data})
+		return
+	}
 
 	token := os.Getenv("GITHUB_TOKEN")
 	ctx := context.Background()
@@ -108,5 +124,7 @@ func GetUserProfile(c *gin.Context) {
 		TimeStamp:           time.Now().Unix(),
 	}
 
+	// db.Put([]byte(username), []byte(uf), nil)
+	db.Put([]byte(username), []byte("todo: user-profile"), nil)
 	c.JSON(http.StatusOK, gin.H{"msg": uf})
 }
