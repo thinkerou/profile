@@ -9,9 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
+	"github.com/hashicorp/golang-lru"
 	"github.com/thinkerou/profile/model"
 	"golang.org/x/oauth2"
-	"github.com/hashicorp/golang-lru"
 )
 
 var once sync.Once
@@ -66,6 +66,8 @@ func GetUserProfile(c *gin.Context) {
 
 	var repoCommits = make(map[*github.Repository][]*github.RepositoryCommit)
 	var langRepoGrouping = make(map[string][]*github.Repository)
+	var repoStarCount = make(map[string]uint)
+	var repoStarCountDesc = make(map[string]string)
 	for _, repo := range repos {
 		if repo.Language == nil {
 			r, ok := langRepoGrouping["Unknown"]
@@ -81,6 +83,10 @@ func GetUserProfile(c *gin.Context) {
 			} else {
 				langRepoGrouping[*repo.Language] = append(r, repo)
 			}
+		}
+		if *repo.WatchersCount > 0 {
+			repoStarCount[*repo.Name] = uint(*repo.WatchersCount)
+			repoStarCountDesc[*repo.Name] = *repo.Description
 		}
 
 		var cs []*github.RepositoryCommit
@@ -108,8 +114,12 @@ func GetUserProfile(c *gin.Context) {
 		}
 	}
 
-	// var repoCommitCount = make(map[string]uint)
-	// var repoStarCount = make(map[string]uint)
+	var repoCommitCountDesc = make(map[string]string)
+	var repoCommitCount = make(map[string]uint)
+	for k, v := range repoCommits {
+		repoCommitCount[*k.Name] = uint(len(v))
+		repoCommitCountDesc[*k.Name] = *k.Description
+	}
 
 	uf := model.UserProfile{
 		User:                *user,
@@ -117,9 +127,10 @@ func GetUserProfile(c *gin.Context) {
 		LangRepoCount:       langRepoCount,
 		LangStarCount:       langStarCount,
 		LangCommitCount:     langCommitCount,
-		RepoCommitCount:     nil,
-		RepoCommitCountDesc: nil,
-		RepoStarCountDesc:   nil,
+		RepoCommitCount:     repoCommitCount,
+		RepoStarCount:       repoStarCount,
+		RepoCommitCountDesc: repoCommitCountDesc,
+		RepoStarCountDesc:   repoStarCountDesc,
 		TimeStamp:           time.Now().Unix(),
 	}
 
