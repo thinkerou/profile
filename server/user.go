@@ -4,30 +4,30 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
-	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/thinkerou/profile/model"
 	"golang.org/x/oauth2"
+	"github.com/hashicorp/golang-lru"
 )
+
+var once sync.Once
+var lruCache *lru.Cache
+
+func init() {
+	once.Do(func() {
+		lruCache, _ = lru.New(1024)
+	})
+}
 
 func GetUserProfile(c *gin.Context) {
 	username := c.Param("user")
-	db, e := leveldb.OpenFile("user-profile", nil)
-	if e != nil {
-		println("1")
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": e.Error()})
-		return
-	}
-	defer db.Close()
-
-	data, e := db.Get([]byte(username), nil)
-	if e == nil {
-		println("2")
-		println(data)
-		c.JSON(http.StatusOK, gin.H{"msg": data})
+	data, ok := lruCache.Get(username)
+	if ok {
+		c.JSON(http.StatusOK, gin.H{"msg": data.(model.UserProfile)})
 		return
 	}
 
@@ -42,7 +42,6 @@ func GetUserProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
-	println(user.String())
 	// c.JSON(http.StatusOK, gin.H{"email": *user.Email})
 
 	var repos []*github.Repository
@@ -64,7 +63,6 @@ func GetUserProfile(c *gin.Context) {
 			}
 		}
 	}
-	println(len(repos))
 
 	var repoCommits = make(map[*github.Repository][]*github.RepositoryCommit)
 	var langRepoGrouping = make(map[string][]*github.Repository)
@@ -98,8 +96,6 @@ func GetUserProfile(c *gin.Context) {
 			cs = append(cs, commits...)
 		}
 	}
-	println(len(repoCommits))
-	println(len(langRepoGrouping))
 
 	var langRepoCount = make(map[string]uint)
 	// var langStarCount = make(map[string]uint)
@@ -124,7 +120,6 @@ func GetUserProfile(c *gin.Context) {
 		TimeStamp:           time.Now().Unix(),
 	}
 
-	// db.Put([]byte(username), []byte(uf), nil)
-	db.Put([]byte(username), []byte("todo: user-profile"), nil)
+	lruCache.Add(username, uf)
 	c.JSON(http.StatusOK, gin.H{"msg": uf})
 }
