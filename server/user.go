@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
 	"github.com/hashicorp/golang-lru"
+	"github.com/jinzhu/now"
 	"github.com/thinkerou/profile/model"
 	"golang.org/x/oauth2"
 )
@@ -123,7 +125,7 @@ func GetUserProfile(c *gin.Context) {
 
 	uf := model.UserProfile{
 		User:                *user,
-		QuarterCommitCount:  nil,
+		QuarterCommitCount:  getCommitsForQuarters(user, repoCommits),
 		LangRepoCount:       langRepoCount,
 		LangStarCount:       langStarCount,
 		LangCommitCount:     langCommitCount,
@@ -136,4 +138,38 @@ func GetUserProfile(c *gin.Context) {
 
 	lruCache.Add(username, uf)
 	c.JSON(http.StatusOK, gin.H{"msg": uf})
+}
+
+func getCommitsForQuarters(user *github.User, repoCommits map[*github.Repository][]*github.RepositoryCommit) map[string]uint {
+	var result = make(map[string]uint)
+	for _, v := range repoCommits {
+		for _, e := range v {
+			t := *e.Commit.Committer.Date
+			name := getQuarterName(now.New(t).BeginningOfQuarter())
+			if d, exist := result[name]; exist {
+				result[name] = d + 1
+			} else {
+				result[name] = 1
+			}
+		}
+	}
+	return result
+}
+
+func getQuarterName(t time.Time) string {
+	y := strconv.Itoa(t.Year())
+	name := ""
+	switch t.Month() {
+	case 1:
+		name = y + "-Q1"
+	case 4:
+		name = y + "-Q2"
+	case 7:
+		name = y + "-Q3"
+	case 10:
+		name = y + "-Q4"
+	default:
+		name = ""
+	}
+	return name
 }
