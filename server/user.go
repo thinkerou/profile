@@ -98,11 +98,14 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	var langRepoCount = make(map[string]uint)
-	// var langStarCount = make(map[string]uint)
-	// var langCommitCount = make(map[string]uint)
+	var langStarCount = make(map[string]uint)
+	var langCommitCount = make(map[string]uint)
 	for k, v := range langRepoGrouping {
 		langRepoCount[k] = uint(len(v))
-		//
+		for _, e := range v {
+			langStarCount[k] += uint(*e.WatchersCount)
+			langCommitCount[k] += uint(len(repoCommits[e]))
+		}
 	}
 
 	// var repoCommitCount = make(map[string]uint)
@@ -112,8 +115,8 @@ func GetUserProfile(c *gin.Context) {
 		User:                *user,
 		QuarterCommitCount:  nil,
 		LangRepoCount:       langRepoCount,
-		LangStarCount:       nil,
-		LangCommitCount:     nil,
+		LangStarCount:       langStarCount,
+		LangCommitCount:     langCommitCount,
 		RepoCommitCount:     nil,
 		RepoCommitCountDesc: nil,
 		RepoStarCountDesc:   nil,
