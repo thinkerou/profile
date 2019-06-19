@@ -142,16 +142,70 @@ func GetUserProfile(c *gin.Context) {
 
 func getCommitsForQuarters(user *github.User, repoCommits map[*github.Repository][]*github.RepositoryCommit) map[string]uint {
 	var result = make(map[string]uint)
+	var allKeys = getQuarterNameList(*user.CreatedAt)
+	var keys []string
 	for _, v := range repoCommits {
 		for _, e := range v {
 			t := *e.Commit.Committer.Date
 			name := getQuarterName(now.New(t).BeginningOfQuarter())
+			keys = append(keys, name)
 			if d, exist := result[name]; exist {
 				result[name] = d + 1
 			} else {
 				result[name] = 1
 			}
 		}
+	}
+	for _, key := range allKeys {
+		found := false
+		for _, k := range keys {
+			if key == k {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result[key] = 0
+		}
+	}
+	return result
+}
+
+func getQuarterNameList(ts github.Timestamp) []string {
+	var result []string
+	q := now.New(ts.Time).BeginningOfQuarter()
+	m := now.New(time.Now()).BeginningOfQuarter()
+	switch q.Month() {
+	case 1:
+		result = append(result, strconv.Itoa(q.Year())+"-Q1")
+		fallthrough
+	case 4:
+		result = append(result, strconv.Itoa(q.Year())+"-Q2")
+		fallthrough
+	case 7:
+		result = append(result, strconv.Itoa(q.Year())+"-Q3")
+		fallthrough
+	case 10:
+		result = append(result, strconv.Itoa(q.Year())+"-Q4")
+	}
+	for i := q.Year() + 1; i < m.Year(); i++ {
+		result = append(result, strconv.Itoa(i)+"-Q1")
+		result = append(result, strconv.Itoa(i)+"-Q2")
+		result = append(result, strconv.Itoa(i)+"-Q3")
+		result = append(result, strconv.Itoa(i)+"-Q4")
+	}
+	switch m.Month() {
+	case 10:
+		result = append(result, strconv.Itoa(m.Year())+"-Q4")
+		fallthrough
+	case 7:
+		result = append(result, strconv.Itoa(m.Year())+"-Q3")
+		fallthrough
+	case 4:
+		result = append(result, strconv.Itoa(m.Year())+"-Q2")
+		fallthrough
+	case 1:
+		result = append(result, strconv.Itoa(m.Year())+"-Q1")
 	}
 	return result
 }
