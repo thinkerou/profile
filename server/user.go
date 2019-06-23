@@ -20,7 +20,7 @@ var once sync.Once
 var lruCache *lru.Cache
 var userMap sync.Map
 
-const EXPIRE = 60 // 3600 // one hour
+const EXPIRE = 43200 // 12 hour
 
 func init() {
 	once.Do(func() {
