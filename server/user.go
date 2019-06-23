@@ -37,7 +37,7 @@ func GetUserProfile(c *gin.Context) {
 		fmt.Println(o)
 		fmt.Println(t)
 		if o {
-			if time.Now().Unix()-t.(int64) > 0 {
+			if time.Now().Unix() - t.(int64) < EXPIRE {
 				fmt.Println("return from cache")
 				c.JSON(http.StatusOK, gin.H{"msg": data.(model.UserProfile)})
 				return
