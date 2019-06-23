@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,6 +19,9 @@ import (
 
 var once sync.Once
 var lruCache *lru.Cache
+var userMap sync.Map
+
+const EXPIRE = 60 // 3600 // one hour
 
 func init() {
 	once.Do(func() {
@@ -29,8 +33,19 @@ func GetUserProfile(c *gin.Context) {
 	username := c.Param("user")
 	data, ok := lruCache.Get(username)
 	if ok {
-		c.JSON(http.StatusOK, gin.H{"msg": data.(model.UserProfile)})
-		return
+		t, o := userMap.Load(username)
+		fmt.Println(o)
+		fmt.Println(t)
+		if o {
+			if time.Now().Unix()-t.(int64) > 0 {
+				fmt.Println("return from cache")
+				c.JSON(http.StatusOK, gin.H{"msg": data.(model.UserProfile)})
+				return
+			} else {
+				fmt.Println("return expire")
+				userMap.Delete(username)
+			}
+		}
 	}
 
 	token := os.Getenv("GITHUB_TOKEN")
@@ -137,6 +152,8 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	lruCache.Add(username, uf)
+	userMap.Store(username, time.Now().Unix())
+
 	c.JSON(http.StatusOK, gin.H{"msg": uf})
 }
 
