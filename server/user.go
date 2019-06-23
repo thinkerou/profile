@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,15 +33,11 @@ func GetUserProfile(c *gin.Context) {
 	data, ok := lruCache.Get(username)
 	if ok {
 		t, o := userMap.Load(username)
-		fmt.Println(o)
-		fmt.Println(t)
 		if o {
 			if time.Now().Unix() - t.(int64) < EXPIRE {
-				fmt.Println("return from cache")
 				c.JSON(http.StatusOK, gin.H{"msg": data.(model.UserProfile)})
 				return
 			} else {
-				fmt.Println("return expire")
 				userMap.Delete(username)
 			}
 		}
