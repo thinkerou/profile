@@ -103,7 +103,9 @@ func GetUserProfile(c *gin.Context) {
 		}
 		if *repo.WatchersCount > 0 {
 			repoStarCount[*repo.Name] = uint(*repo.WatchersCount)
-			repoStarCountDesc[*repo.Name] = *repo.Description
+			if repo.Description != nil {
+				repoStarCountDesc[*repo.Name] = *repo.Description
+			}
 		}
 
 		var cs []*github.RepositoryCommit
@@ -135,7 +137,9 @@ func GetUserProfile(c *gin.Context) {
 	var repoCommitCount = make(map[string]uint)
 	for k, v := range repoCommits {
 		repoCommitCount[*k.Name] = uint(len(v))
-		repoCommitCountDesc[*k.Name] = *k.Description
+		if k.Description != nil {
+			repoCommitCountDesc[*k.Name] = *k.Description
+		}
 	}
 
 	uf := model.UserProfile{
